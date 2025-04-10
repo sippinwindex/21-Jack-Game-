@@ -1,5 +1,318 @@
-@import "bootstrap/dist/css/bootstrap.min.css";
+/* Variables */
+:root {
+    --card-width: 85px;
+    --card-height: 120px;
+    --felt-green: #2c5d4f; /* Slightly darker, richer green */
+    --darker-green: #1f4238;
+    --gold-accent: #FFD700;
+    --light-text: #f0f0f0;
+    --dark-text: #1a1a1a;
+    --red-card: #c0392b; /* Slightly desaturated red */
+    --black-card: #2c3e50; /* Dark blueish grey */
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --highlight-color: rgba(255, 255, 255, 0.15);
+    --disabled-opacity: 0.5; /* Still useful for glass buttons */
+    --disabled-grey-bg: #adb5bd; /* Grey for disabled push button face */
+    --disabled-grey-text: #6c757d; /* Grey for disabled push button base/text */
+}
 
-body{
-    background: white;
+/* Base Styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Body with Pixelated Background */
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+    position: relative;
+    background-color: var(--darker-green);
+    background-image:
+        radial-gradient(ellipse at center, var(--felt-green) 0%, var(--darker-green) 80%),
+        url('https://www.transparenttextures.com/patterns/felt.png');
+    background-size:
+        auto,
+        40px 40px; /* <<< ADJUST PIXEL SIZE HERE */
+    background-blend-mode:
+        multiply,
+        overlay;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    color: var(--light-text);
+}
+
+/* Optional Vignette */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(0,0,0,0.2) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.background-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* CRT Overlay Styles (Enhanced) */
+#crt-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    transition: opacity 0.5s ease-in-out;
+    overflow: hidden;
+}
+#crt-overlay.active {
+    opacity: 1;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(102, 159, 102, 0.087) 50%,
+        rgba(2, 28, 10, 0.57) 100%
+    );
+}
+#crt-overlay.active::after { /* Scanlines */
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(
+        to bottom, rgba(10, 10, 10, 0.1) 50%, rgba(0, 0, 0, 0.355) 50%
+    );
+    background-size: 100% 4px;
+    animation: scanlines 0.15s linear infinite alternate;
+    opacity: 0.5;
+}
+#crt-overlay.active::before { /* Flicker/Glow/Noise */
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(
+        ellipse at center, rgba(128, 128, 248, 0.04) 0%, rgba(0, 0, 0, 0.06) 100%
+    );
+    background-image: radial-gradient(
+        ellipse at center, rgba(230, 230, 255, 0.04) 0%, rgba(0, 0, 0, 0.06) 100%
+     ),
+     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23ffffff' fill-opacity='0.03'/%3E%3C/svg%3E");
+    animation: flicker 0.1s infinite;
+}
+@keyframes scanlines {
+    0% { background-position: 0 0; } 25% { background-position: 0 2px; }
+    50% { background-position: 0 1px; } 75% { background-position: 0 3px; }
+    100% { background-position: 0 4px; }
+}
+@keyframes flicker {
+  0% { opacity: 0.9; } 5% { opacity: 0.7; } 10% { opacity: 0.95; } 15% { opacity: 0.65; }
+  20% { opacity: 0.9; } 30% { opacity: 0.75 } 100% { opacity: 0.9; }
+}
+
+/* Game Table */
+#game-table {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px var(--shadow-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: filter 0.3s ease;
+    position: relative;
+    z-index: 2; /* Above vignette */
+}
+
+/* Areas, Hand Info, Score Display (Unchanged from previous) */
+.area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+.hand-info { display: flex; justify-content: space-between; align-items: baseline; width: 90%; max-width: 400px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 5px; margin-bottom: 5px; }
+.hand-info h2 { font-family: 'Oswald', sans-serif; font-weight: 500; font-size: 1.1em; color: var(--light-text); opacity: 0.8; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+.score-display { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.3em; color: var(--gold-accent); min-height: 1.3em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+/* Hand & Card Styles (Unchanged from previous) */
+.hand { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: -20px; min-height: var(--card-height); perspective: 1000px; position: relative; width: 100%; padding: 0 10px; }
+.card { width: var(--card-width); height: var(--card-height); border-radius: 8px; position: relative; background: white; border: 1px solid rgba(0, 0, 0, 0.2); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; padding: 5px; margin: 0 -15px; transition: transform 0.3s ease-out, opacity 0.3s ease-out; transform-origin: center center; opacity: 0; transform: translateY(20px) scale(0.95); }
+.card.deal-in { opacity: 1; transform: translateY(0) scale(1); }
+.hand:hover .card:not(:hover) { transform: translateY(-5px); }
+.card:hover { transform: translateY(-15px) scale(1.05); z-index: 10; }
+.card.face-down { background: var(--black-card); background-image: linear-gradient(135deg, rgba(255,255,255,0.08) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.08) 75%, transparent 75%, transparent 100%); background-size: 40px 40px; border: 1px solid rgba(255, 255, 255, 0.1); }
+.card.face-down .corner, .card.face-down .center-rank { display: none; }
+.card.flip { animation: flip 0.6s ease-in-out forwards; }
+@keyframes flip { 0% { transform: rotateY(180deg); } 100% { transform: rotateY(0deg); } }
+.card.flip .corner, .card.flip .center-rank { display: none; }
+.corner { position: absolute; text-align: center; line-height: 1; }
+.corner .rank { font-size: 14px; font-weight: 700; font-family: 'Oswald', sans-serif; }
+.corner .suit { font-size: 13px; margin-top: 1px; }
+.top-left { top: 6px; left: 6px; }
+.bottom-right { bottom: 6px; right: 6px; transform: rotate(180deg); }
+.center-rank { flex-grow: 1; display: flex; justify-content: center; align-items: center; font-family: 'Press Start 2P', cursive; font-size: 24px; transform: translateY(2px); }
+.card.red .suit, .card.red .rank, .card.red .center-rank { color: var(--red-card); }
+.card.black .suit, .card.black .rank, .card.black .center-rank { color: var(--black-card); }
+
+/* Controls Area & Components (Mostly Unchanged) */
+.controls-area { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 15px; background: rgba(0, 0, 0, 0.15); border-radius: 10px; margin-top: 10px; width: 100%; max-width: 500px; }
+.top-controls-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 5px; margin-bottom: 10px; }
+.balance-display { font-size: 1.4em; font-weight: 500; color: var(--light-text); background-color: rgba(0,0,0,0.2); padding: 5px 15px; border-radius: 20px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); flex-shrink: 0; }
+.balance-display span { font-weight: 700; color: var(--gold-accent); }
+.utility-button { background: rgba(66, 152, 110, 0.201); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--light-text); font-size: 1.2em; padding: 6px 10px; border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease; line-height: 1; }
+.utility-button:hover { background: rgba(100, 73, 22, 0.525); }
+.controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.bet-input-wrapper { display: flex; align-items: center; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 0 8px; }
+.bet-input-wrapper span { padding-right: 4px; opacity: 0.7; }
+label[for="bet-input"] { font-weight: 500; }
+#bet-input { width: 70px; padding: 8px 5px 8px 0; border-radius: 0 8px 8px 0; border: none; background: transparent; color: var(--light-text); font-family: 'Poppins', sans-serif; font-size: 1em; text-align: right; outline: none; }
+#bet-input[type=number] { -moz-appearance: textfield; -webkit-appearance: none; appearance: none; margin: 0; }
+#bet-input::-webkit-outer-spin-button, #bet-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* === Action Buttons Section === */
+
+/* Existing Glass Button Style (Used for Hit, Stand, Next Round) */
+.glass-button {
+    padding: 10px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(186, 235, 238, 0.212); /* Your existing color */
+    backdrop-filter: blur(8px);
+    color: var(--light-text);
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+.glass-button::after {
+    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.03) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.03) 50%, rgba(255, 255, 255, 0.03) 75%, transparent 75%, transparent);
+    background-size: 15px 15px; opacity: 0.3; z-index: 0; pointer-events: none;
+}
+.glass-button:hover:not(:disabled) { background: rgba(228, 248, 46, 0.454); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.glass-button:active:not(:disabled) { transform: scale(0.97); background: rgba(190, 252, 118, 0.15); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.glass-button:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; /* Standard disabled style for glass buttons */ }
+
+
+/* === NEW 3D Push Button Styles (For Place Bet) === */
+.push-button {
+  --button_radius: 0.75em;
+  --button_color: var(--light-text); /* Face background */
+  --button_outline_color: var(--darker-green); /* Base/shadow & Text/Border */
+
+  /* Base Styles */
+  font-size: 0.95em;
+  font-weight: bold;
+  font-family: 'Poppins', sans-serif;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--button_radius);
+  background: var(--button_outline_color);
+  transition: background-color 0.2s ease;
+}
+.push-button .button_top {
+  display: block;
+  box-sizing: border-box;
+  border: 2px solid var(--button_outline_color);
+  border-radius: var(--button_radius);
+  padding: 0.7em 1.4em; /* Adjusted padding */
+  background: var(--button_color);
+  color: var(--button_outline_color);
+  transform: translateY(-0.2em);
+  transition: transform 0.1s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.push-button:hover:not(:disabled) .button_top { transform: translateY(-0.33em); }
+.push-button:active:not(:disabled) .button_top { transform: translateY(0); }
+
+/* Disabled State Styles for Push Button */
+.push-button:disabled {
+  cursor: not-allowed;
+  --button_color: var(--disabled-grey-bg); /* Use variable for face */
+  --button_outline_color: var(--disabled-grey-text); /* Use variable for base/text */
+  background: var(--button_outline_color); /* Apply base color */
+}
+.push-button:disabled .button_top {
+  background: var(--button_color); /* Apply face color */
+  color: var(--button_outline_color); /* Apply text color */
+  border-color: var(--button_outline_color); /* Apply border color */
+  transform: translateY(-0.2em); /* Lock transform */
+  cursor: not-allowed;
+}
+/* Prevent transforms on hover/active when disabled */
+.push-button:disabled:hover .button_top,
+.push-button:disabled:active .button_top { transform: translateY(-0.2em); }
+/* === End of 3D Push Button Styles === */
+
+
+/* Game Feedback Area (Unchanged) */
+.game-feedback { margin: 10px 0; padding: 12px 20px; background: rgba(0, 0, 0, 0.3); color: var(--light-text); border-radius: 8px; text-align: center; font-size: 1em; font-weight: 500; min-height: 46px; width: 95%; max-width: 500px; transition: background-color 0.4s ease, color 0.4s ease, transform 0.3s ease-out, opacity 0.3s ease-out; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); opacity: 0; transform: translateY(-10px); }
+.game-feedback.show { opacity: 1; transform: translateY(0); }
+.game-feedback.win { background-color: #27ae60; color: white; font-weight: 700; }
+.game-feedback.lose { background-color: var(--red-card); color: white; font-weight: 700; }
+.game-feedback.push { background-color: #3498db; color: white; }
+.game-feedback.blackjack { background-color: var(--gold-accent); color: var(--black-card); font-weight: 700; text-shadow: 0 1px 1px rgba(255,255,255,0.5); }
+.game-feedback.bust { background-color: #e74c3c; color: white; font-weight: 700; }
+
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    :root { --card-width: 75px; --card-height: 105px; }
+    .hand { gap: -25px; margin: 0 -20px; }
+    .center-rank { font-size: 20px; }
+    .hand-info h2 { font-size: 1em; }
+    .score-display { font-size: 1.2em; }
+    .controls-area { max-width: 90%; }
+}
+
+@media (max-width: 480px) {
+    body { padding: 10px; }
+    #game-table { gap: 15px; padding: 15px; }
+    :root { --card-width: 60px; --card-height: 84px; }
+    .hand { gap: -30px; margin: 0 -25px; min-height: var(--card-height); }
+    .corner .rank { font-size: 10px; }
+    .corner .suit { font-size: 9px; }
+    .center-rank { font-size: 16px; }
+    .controls { flex-direction: column; gap: 10px; width: 100%; }
+
+    /* Target ALL action buttons for consistent mobile width */
+    .action-button {
+        width: 80%;
+        text-align: center;
+        padding-left: 0; /* Remove specific L/R padding */
+        padding-right: 0; /* Remove specific L/R padding */
+    }
+    /* Adjust push button padding slightly if needed */
+     .push-button .button_top {
+        padding-top: 0.7em;
+        padding-bottom: 0.7em;
+        /* Let width control overall size */
+     }
+    /* Adjust glass button padding to match push button vertical feel */
+    .glass-button.action-button {
+        padding-top: 0.75em; /* Try to align vertical padding */
+        padding-bottom: 0.75em;
+    }
+
+
+    #betting-controls { flex-direction: column; }
+    .bet-input-wrapper { width: 70%; justify-content: center;}
+    #bet-input { width: 80px; }
+    .balance-display { font-size: 1.2em; }
+    .game-feedback { font-size: 0.9em; padding: 10px 15px; }
+    .top-controls-bar { flex-direction: column; gap: 10px; margin-bottom: 15px;} /* Stack balance and toggle */
 }

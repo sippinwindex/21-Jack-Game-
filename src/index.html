@@ -1,35 +1,86 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="./assets/img/4geeks.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello Rigo with Vanilla.js</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Modern Blackjack</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Press+Start+2P&family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+</head>
+<body>
 
-    <!-- Fontawesome is our recomended library for icons -->
-    <link
-      rel="stylesheet"
-      href="https://use.fontawesome.com/releases/v5.2.0/css/all.css"
-      integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ"
-      crossorigin="anonymous"
-    />
-  </head>
-  <body>
-    <!-- Write your HTML code here, you can delete everything withing the body tags -->
-    <div class="container-fluid text-center">
-      <h1 class="mt-5">Hello Rigo!</h1>
-      <img src="./assets/img/rigo-baby.jpg" />
-      <p class="alert alert-warning mt-4">
-        If this text is <b>not</b> centered and <b>yellow</b>, you probably have
-        an error
-      </p>
-      <div class="fixed-bottom p-4">
-        Made with ❤️ by
-        <a href="https://www.4geeksacademy.com">4Geeks Academy</a>
-      </div>
-    </div>
+    <!-- CRT Overlay -->
+    <div id="crt-overlay"></div>
 
-    <!-- Do not delete this script tag, this is what connects your HTML with the Javascript code -->
-    <script type="module" src="/app.js"></script>
-  </body>
+    <!-- Background Overlay -->
+    <div class="background-overlay"></div>
+
+    <!-- Main Game Table -->
+    <main id="game-table">
+        <!-- Dealer Area -->
+        <div class="area dealer-area">
+            <div class="hand-info">
+                <h2>Dealer's Hand</h2>
+                <span id="dealer-score" class="score-display"></span>
+            </div>
+            <div id="dealer-hand" class="hand"></div>
+        </div>
+
+        <!-- Game Feedback -->
+        <div id="game-feedback" class="game-feedback">Place your bet to start!</div>
+
+        <!-- Player Area -->
+        <div class="area player-area">
+            <div class="hand-info">
+                <h2>Your Hand</h2>
+                <span id="player-score" class="score-display"></span>
+            </div>
+            <div id="player-hand" class="hand"></div>
+        </div>
+
+        <!-- Controls Area -->
+        <div class="controls-area">
+            <div class="top-controls-bar">
+                <div id="balance-display" class="balance-display">Balance: $<span>1000</span></div>
+                <button id="toggle-crt-button" class="utility-button" title="Toggle CRT Effect">📺</button>
+            </div>
+
+            <!-- Betting Controls -->
+            <div id="betting-controls" class="controls betting">
+                <label for="bet-input">Bet:</label>
+                <div class="bet-input-wrapper">
+                    <span>$</span>
+                    <input type="number" id="bet-input" min="5" step="5" value="10">
+                </div>
+                <!-- ****** MODIFIED PLACE BET BUTTON ****** -->
+                <button id="place-bet" class="push-button action-button">
+                  <span class="button_top">Place Bet</span>
+                </button>
+                <!-- ****** END MODIFIED BUTTON ****** -->
+            </div>
+
+            <!-- Game Controls -->
+            <div id="game-controls" class="controls playing" style="display: none;">
+                 <!-- These remain glass buttons (or could be changed later) -->
+                <button id="hit-button" class="glass-button action-button">Hit</button>
+                <button id="stand-button" class="glass-button action-button">Stand</button>
+            </div>
+
+            <!-- End Round Controls -->
+            <div id="end-round-controls" class="controls end-round" style="display: none;">
+                 <!-- This remains a glass button -->
+                <button id="new-game-button" class="glass-button action-button">Next Round</button>
+            </div>
+        </div>
+    </main>
+  <!-- Link to your JavaScript file -->
+  <script src="script.js"></script>
+  <script type="module" src="/app.js"></script>
+</body>
 </html>
